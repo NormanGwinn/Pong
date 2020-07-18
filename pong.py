@@ -26,6 +26,7 @@ right_paddle = paddle.BasicPaddle((0.5 * court.COURT_WIDTH, 0.0))
 initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
 ball = ball.LinearSquare((0.0,0.0), initial_angle, 1.0)
 myPredictor = predictor.Predictor()
+paddle_commands = []
 
 def init():
     print(f'Initializing the animation at {dt.datetime.now()}.')
@@ -37,6 +38,8 @@ def init():
     return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist()
 
 def update(frame):
+    global paddle_commands
+
     # ball
     (x, y) = ball.update_location(dt.timedelta(milliseconds = 100))
     predicted_y = myPredictor.predict_y(x, y)
@@ -54,7 +57,16 @@ def update(frame):
     right_paddle.update_location(dy)
 
     # left_paddle
-    left_paddle.update_location(0.1*(0.5 - np.random.rand()))
+    #print(f'The paddle command list is {paddle_commands}')
+    dy = 0.0
+    for letter in paddle_commands:
+        if letter == 'u':
+            dy += 0.1
+        elif letter == 'd':
+            dy -= 0.1
+    paddle_commands = []
+
+    left_paddle.update_location(dy)
 
     return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist()
 
@@ -70,7 +82,9 @@ canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
 def on_key_press(event):
     print("you pressed {}".format(event.key))
-    key_press_handler(event, canvas, toolbar)
+    if event.key in ['u','d']:
+        paddle_commands.append(event.key)
+    #key_press_handler(event, canvas, toolbar)
 
 canvas.mpl_connect("key_press_event", on_key_press)
 
