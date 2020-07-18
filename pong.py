@@ -43,10 +43,18 @@ def update(frame):
     print(f'The predicted Y is {predicted_y}')
 
     # right_paddle
-    right_paddle.update_location(dt.timedelta(milliseconds = 100))
+    (x, y) = right_paddle.get_center()
+    epsilon = 0.06
+    dy = 0.0
+    if abs(predicted_y - y) > epsilon:
+        if predicted_y > y:
+            dy = 0.1
+        else:
+            dy = -0.1
+    right_paddle.update_location(dy)
 
     # left_paddle
-    left_paddle.update_location(dt.timedelta(milliseconds = 100))
+    left_paddle.update_location(0.1*(0.5 - np.random.rand()))
 
     return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist()
 

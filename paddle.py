@@ -10,10 +10,14 @@ class AbstractPaddle(ABC):
         self._xy = xy         # (x, y) pair for center of paddle; type:  tuple(float, float)
         super().__init__()
     
-    # dtime := time elapsed; type:  dt.timedelta
+    # dy := requested change in y location; type:  float
     # returns:  xy; type:  tuple(float, float)
     @abstractmethod
-    def update_location(self, dtime):
+    def update_location(self, dy):
+        pass
+
+    @abstractmethod
+    def get_center(self):
         pass
 
     @abstractmethod
@@ -31,11 +35,14 @@ class BasicPaddle(AbstractPaddle):
     def _get_lower_left(self):
         return (self._xy[0] - 0.5 * BasicPaddle.width, self._xy[1] - 0.5 * BasicPaddle.height)
 
-    def update_location(self, dtime):
-        dy = dtime.total_seconds() * (0.5 - np.random.rand())
+    def get_center(self):
+        return (self._xy[0], self._xy[1])        
+
+    def update_location(self, dy):
         self._xy = (self._xy[0], self._xy[1] + dy)
         #print(f'New XY:  {self._xy}')
         self._artist.set_xy(self._get_lower_left())
+        return (self._xy[0], self._xy[1])
 
     def get_artist(self):
         return self._artist
