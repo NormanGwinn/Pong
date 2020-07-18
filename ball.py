@@ -60,14 +60,14 @@ class LinearSquare(AbstractBall):
         if new_x > court.COURT_WIDTH/2:
             self._bounce_sound.play()
 
-            # Compute Final Y
-            old_x = self._xy[0]
-            ratio_before_bounce = (0.5*court.COURT_WIDTH - old_x)/dx
-            final_y = self._xy[1] + ratio_before_bounce * dy
-            self._path_trace.Final_Y = final_y
-            print(self._path_trace)
-            self._path_trace.to_sql('path', con=self._engine, index=False, if_exists='append')
-            self._path_trace.drop(self._path_trace.index, inplace=True)
+            # # Compute Final Y
+            # old_x = self._xy[0]
+            # ratio_before_bounce = (0.5*court.COURT_WIDTH - old_x)/dx
+            # final_y = self._xy[1] + ratio_before_bounce * dy
+            # self._path_trace.Final_Y = final_y
+            # print(self._path_trace)
+            # self._path_trace.to_sql('path', con=self._engine, index=False, if_exists='append')
+            # self._path_trace.drop(self._path_trace.index, inplace=True)
 
             # Update ball location
             new_x = court.COURT_WIDTH - new_x
@@ -87,13 +87,14 @@ class LinearSquare(AbstractBall):
         self._xy = (new_x, new_y)
         #print(f'New XY:  {self._xy}')
         self._artist.set_xy(self._get_lower_left())
-        new_row = {'TimeStamp':(dt.datetime.now() - self._path_start).total_seconds(),
-                    'X':self._xy[0],
-                    'Y':self._xy[1],
-                    'Angle':self._angle,
-                    'Speed':self._speed,
-                    'Final_Y':0.0}
-        self._path_trace.loc[self._path_trace.shape[0]] = new_row
+        # new_row = {'TimeStamp':(dt.datetime.now() - self._path_start).total_seconds(),
+        #             'X':self._xy[0],
+        #             'Y':self._xy[1],
+        #             'Angle':self._angle,
+        #             'Speed':self._speed,
+        #             'Final_Y':0.0}
+        # self._path_trace.loc[self._path_trace.shape[0]] = new_row
+        return (new_x, new_y)
 
     def get_artist(self):
         return self._artist

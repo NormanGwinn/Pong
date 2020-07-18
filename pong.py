@@ -14,6 +14,7 @@ from matplotlib.animation import FuncAnimation
 import court
 import paddle
 import ball
+import predictor
 
 root = tkinter.Tk()
 root.wm_title("Pong Machine Learning")
@@ -24,6 +25,7 @@ left_paddle = paddle.BasicPaddle((-0.5 * court.COURT_WIDTH, 0.0))
 right_paddle = paddle.BasicPaddle((0.5 * court.COURT_WIDTH, 0.0))
 initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
 ball = ball.LinearSquare((0.0,0.0), initial_angle, 1.0)
+myPredictor = predictor.Predictor()
 
 def init():
     print(f'Initializing the animation at {dt.datetime.now()}.')
@@ -36,7 +38,9 @@ def init():
 
 def update(frame):
     # ball
-    ball.update_location(dt.timedelta(milliseconds = 100))
+    (x, y) = ball.update_location(dt.timedelta(milliseconds = 100))
+    predicted_y = myPredictor.predict_y(x, y)
+    print(f'The predicted Y is {predicted_y}')
 
     # right_paddle
     right_paddle.update_location(dt.timedelta(milliseconds = 100))
