@@ -1,133 +1,28 @@
-import datetime as dt
 import tkinter
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import key_press_handler # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import simpleaudio as sa
-import time
-import traceback
-import court
-import paddle
-import ball
-import predictor
+import game
 
-score_sound = sa.WaveObject.from_wave_file('phasers3.wav')
-
-fig, ax1 = plt.subplots(facecolor='w')
-ax1.set_facecolor('k')
-ax1.axes.xaxis.set_visible(False)
-ax1.axes.yaxis.set_visible(False)
-ax1.axvline(linewidth=1, color='w', dashes=(3,2))  #net
-
-left_score = 0
-right_score = 0
-left_score_box = None
-right_score_box = None
-left_paddle = paddle.BasicPaddle((-0.52 * court.COURT_WIDTH, 0.0), 'Human')
-right_paddle = paddle.BasicPaddle((0.52 * court.COURT_WIDTH, 0.0), 'ML')
-initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
-ball = ball.LinearSquare((0.0,0.0), initial_angle, 1.0, left_paddle, right_paddle, training=False)
-
-myPredictor = predictor.Predictor()
-paddle_commands = []
-
-def init():
-    global left_score_box
-    global right_score_box
-    print(f'Initializing the animation at {dt.datetime.now()}, from call stack.')
-    #traceback.print_stack()
-    left_score_box = ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
-    right_score_box = ax1.text(0.5,0.7,'0',fontsize=30,color='w')
-    ax1.add_patch(ball.get_artist())
-    ax1.add_patch(left_paddle.get_artist())
-    ax1.add_patch(right_paddle.get_artist())
-
-    ax1.set_xlim(-1.5 * court.COURT_WIDTH/2, 1.5 * court.COURT_WIDTH/2)
-    ax1.set_ylim(-1.0 * court.COURT_HEIGHT/2, 1.0 * court.COURT_HEIGHT/2)
-    return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist(), left_score_box, right_score_box
-
-def update(frame):
-    global paddle_commands
-    global left_score
-    global right_score
-
-    # ball
-    (x, y) = ball.update_location(dt.timedelta(milliseconds = 100))
-    reset_ball = False
-    if x < -0.5 * court.COURT_WIDTH:
-        right_score += 1
-        right_score_box.set_text(str(right_score))
-        #print(f'right_score_box.text is {right_score_box.get_text()}')
-        score_sound.play()
-        #raise StopIteration
-        reset_ball = True
-    if x > 0.5 * court.COURT_WIDTH:
-        left_score += 1
-        left_score_box.set_text(str(left_score))
-        #print(f'left_score_box.text is {left_score_box.get_text()}')
-        score_sound.play()
-        #raise StopIteration
-        reset_ball = True
-
-    if reset_ball:
-        initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
-        ball.reset((0.0, 0.0), initial_angle, 1.0)
-        #time.sleep(1)
-
-    predicted_y = myPredictor.predict_y(x, y)
-    #print(f'The predicted Y is {predicted_y}')
-
-    # left_paddle
-    #print(f'The paddle command list is {paddle_commands}')
-    dy = 0.0
-    for letter in paddle_commands:
-        if letter == 'u':
-            dy += 0.1
-        elif letter == 'd':
-            dy -= 0.1
-    paddle_commands = []
-    left_paddle.update_location(dy)
-
-    # right_paddle
-    (x, y) = right_paddle.get_center()
-    epsilon = 0.06
-    dy = 0.0
-    if abs(predicted_y - y) > epsilon:
-        if predicted_y > y:
-            dy = 0.1
-        else:
-            dy = -0.1
-    right_paddle.update_location(dy)
-
-    return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist(), left_score_box, right_score_box
+pong = game.Game(diagnostics=False)
+figure = pong.get_figure()
 
 ### GUI Callbacks ###
 def toggle_color_scheme():
     print(f'In toggle_color_scheme.')
-    ax1.set_facecolor('b')
+    pass
 
 def on_key_press(event):
     #print("you pressed {}".format(event.key))
     if event.key in ['u','d']:
-        paddle_commands.append(event.key)
+        pong.add_paddle_command(event.key)
     elif event.key in ['c']:
         toggle_color_scheme()
     #key_press_handler(event, canvas, toolbar)
 
-animation = None
 def start_game():
-    global animation
-    print('Start Game')
-    if animation is not None:
-        animation.event_source.stop()
-    animation = FuncAnimation(fig, update, interval=200,
-                        init_func=init, blit=True)
+    pong.start()
     canvas.draw()
-    pass
 
 def _quit():
     root.quit()     # stops mainloop
@@ -145,16 +40,18 @@ lbl_instructions.pack()
 btn_start = tkinter.Button(master=root, text="Start Game", command=start_game)
 btn_start.pack()
 
-canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+show_machine_learning = tkinter.BooleanVar() 
+show_machine_learning.set(False)
+chk_show_ml = tkinter.Checkbutton(root, var=show_machine_learning, text="Show Machine Learning")
+chk_show_ml.pack()
+
+canvas = FigureCanvasTkAgg(figure, master=root)  # A tk.DrawingArea.
 canvas.draw()
 canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 canvas.mpl_connect("key_press_event", on_key_press)
 
 btn_quit = tkinter.Button(master=root, text="Quit", command=_quit)
 btn_quit.pack(side=tkinter.BOTTOM)
-
-# ani = FuncAnimation(fig, update, interval=200,
-#                     init_func=init, blit=True)
 
 #root.resizable(False, False) 
 tkinter.mainloop()
