@@ -25,8 +25,8 @@ ax1.axvline(linewidth=1, color='w', dashes=(3,2))  #net
 
 left_score = 0
 right_score = 0
-left_score_box = ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
-right_score_box = ax1.text(0.5,0.7,'0',fontsize=30,color='w')
+left_score_box = None
+right_score_box = None
 left_paddle = paddle.BasicPaddle((-0.52 * court.COURT_WIDTH, 0.0), 'Human')
 right_paddle = paddle.BasicPaddle((0.52 * court.COURT_WIDTH, 0.0), 'ML')
 initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
@@ -36,8 +36,12 @@ myPredictor = predictor.Predictor()
 paddle_commands = []
 
 def init():
+    global left_score_box
+    global right_score_box
     print(f'Initializing the animation at {dt.datetime.now()}, from call stack.')
     #traceback.print_stack()
+    left_score_box = ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
+    right_score_box = ax1.text(0.5,0.7,'0',fontsize=30,color='w')
     ax1.add_patch(ball.get_artist())
     ax1.add_patch(left_paddle.get_artist())
     ax1.add_patch(right_paddle.get_artist())
@@ -101,17 +105,7 @@ def update(frame):
 
     return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist(), left_score_box, right_score_box
 
-root = tkinter.Tk()
-root.configure(bg='white')
-root.wm_title("Pong Machine Learning")
-
-lbl_instructions = tkinter.Label(root, text="Control the Left Paddle with the 'u' (up) and 'd' (down) keys.")
-lbl_instructions.pack()
-
-canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-canvas.draw()
-canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-
+### GUI Callbacks ###
 def toggle_color_scheme():
     print(f'In toggle_color_scheme.')
     ax1.set_facecolor('b')
@@ -124,22 +118,43 @@ def on_key_press(event):
         toggle_color_scheme()
     #key_press_handler(event, canvas, toolbar)
 
-canvas.mpl_connect("key_press_event", on_key_press)
+animation = None
+def start_game():
+    global animation
+    print('Start Game')
+    if animation is not None:
+        animation.event_source.stop()
+    animation = FuncAnimation(fig, update, interval=200,
+                        init_func=init, blit=True)
+    canvas.draw()
+    pass
 
 def _quit():
     root.quit()     # stops mainloop
     root.destroy()  # this is necessary on Windows to prevent
                     # Fatal Python Error: PyEval_RestoreThread: NULL tstate
 
-button = tkinter.Button(master=root, text="Quit", command=_quit)
-button.pack(side=tkinter.BOTTOM)
+### GUI Layout ###
+root = tkinter.Tk()
+root.configure(bg='white')
+root.wm_title("Pong Machine Learning")
 
-ani = FuncAnimation(fig, update, interval=200,
-                    init_func=init, blit=True)
+lbl_instructions = tkinter.Label(root, text="Control the Left Paddle with the 'u' (up) and 'd' (down) keys.")
+lbl_instructions.pack()
 
-# ani = FuncAnimation(fig, update, frames=np.arange(0,60), interval=200,
+btn_start = tkinter.Button(master=root, text="Start Game", command=start_game)
+btn_start.pack()
+
+canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+canvas.draw()
+canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+canvas.mpl_connect("key_press_event", on_key_press)
+
+btn_quit = tkinter.Button(master=root, text="Quit", command=_quit)
+btn_quit.pack(side=tkinter.BOTTOM)
+
+# ani = FuncAnimation(fig, update, interval=200,
 #                     init_func=init, blit=True)
 
 #root.resizable(False, False) 
 tkinter.mainloop()
-
