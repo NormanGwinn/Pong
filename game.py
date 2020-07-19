@@ -16,15 +16,9 @@ import predictor
 class Game():
     score_sound = sa.WaveObject.from_wave_file('phasers3.wav')
 
-    def __init__(self, diagnostics=False):
-        self.diagnostics = diagnostics
-        self.figure = None
-        self.ax1 = None
-        self.ax2 = None
-        if diagnostics:
-            self.figure, (self.ax1, self.ax2) = plt.subplots(2,1,facecolor='w')
-        else:
-            self.figure, self.ax1 = plt.subplots(1,1,facecolor='w')
+    def __init__(self, fig):
+        self.figure = fig
+        self.ax1 = fig.add_subplot(111)
         self.ax1.set_facecolor('k')
         self.ax1.axes.xaxis.set_visible(False)
         self.ax1.axes.yaxis.set_visible(False)
@@ -38,16 +32,18 @@ class Game():
         initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
         self.ball = ball.LinearSquare((0.0,0.0), initial_angle, 1.0, 
                                       self.left_paddle, self.right_paddle, training=False)
-        self.myPredictor = predictor.Predictor()
+        self.predictor = predictor.Predictor()
         self.paddle_commands = []
         self.animation = None
 
     def get_figure(self):
         return self.figure
 
+    def get_predictor(self):
+        return self.predictor
+
     def init(self):
         print(f'Initializing the animation at {dt.datetime.now()}, from call stack.')
-        #traceback.print_stack()
         self.left_score_box = self.ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
         self.right_score_box = self.ax1.text(0.5,0.7,'0',fontsize=30,color='w')
         self.ax1.add_patch(self.ball.get_artist())
@@ -71,14 +67,14 @@ class Game():
             self.right_score += 1
             self.right_score_box.set_text(str(self.right_score))
             #print(f'right_score_box.text is {right_score_box.get_text()}')
-            Game.score_sound.play()
+            #Game.score_sound.play()
             #raise StopIteration
             reset_ball = True
         if x > 0.5 * court.COURT_WIDTH:
             self.left_score += 1
             self.left_score_box.set_text(str(self.left_score))
             #print(f'left_score_box.text is {left_score_box.get_text()}')
-            Game.score_sound.play()
+            #Game.score_sound.play()
             #raise StopIteration
             reset_ball = True
 
@@ -87,7 +83,7 @@ class Game():
             self.ball.reset((0.0, 0.0), initial_angle, 1.0)
             #time.sleep(1)
 
-        predicted_y = self.myPredictor.predict_y(x, y)
+        predicted_y = self.predictor.predict_y(x, y)
         #print(f'The predicted Y is {predicted_y}')
 
         # left_paddle
@@ -119,7 +115,7 @@ class Game():
         self.paddle_commands.append(cmd)
 
     def start(self):
-        print('Start Game')
+        #print('Start Game')
         if self.animation is not None:
             self.animation.event_source.stop()
         self.animation = FuncAnimation(self.figure, self.update, interval=200,

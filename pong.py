@@ -4,8 +4,9 @@ from matplotlib.backend_bases import key_press_handler # Implement the default M
 from matplotlib.figure import Figure
 import game
 
-pong = game.Game(diagnostics=False)
-figure = pong.get_figure()
+pong = None
+fig = Figure(figsize=(6,5), dpi=100)
+ml_fig = Figure(figsize=(5,10), dpi=100)
 
 ### GUI Callbacks ###
 def toggle_color_scheme():
@@ -21,8 +22,24 @@ def on_key_press(event):
     #key_press_handler(event, canvas, toolbar)
 
 def start_game():
+    global pong
+    pong = game.Game(fig)
     pong.start()
     canvas.draw()
+
+def show_ml():
+    global pong
+    ml_window = tkinter.Toplevel(root)
+    ml_window.title("The View from the Machine")
+
+    ml_canvas = FigureCanvasTkAgg(ml_fig, master=ml_window)  # A tk.DrawingArea.
+    ml_canvas.draw()
+    ml_canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+
+    pong.get_predictor().start(ml_fig)
+
+def ml_quit():
+    pass
 
 def _quit():
     root.quit()     # stops mainloop
@@ -40,15 +57,13 @@ lbl_instructions.pack()
 btn_start = tkinter.Button(master=root, text="Start Game", command=start_game)
 btn_start.pack()
 
-show_machine_learning = tkinter.BooleanVar() 
-show_machine_learning.set(False)
-chk_show_ml = tkinter.Checkbutton(root, var=show_machine_learning, text="Show Machine Learning")
-chk_show_ml.pack()
-
-canvas = FigureCanvasTkAgg(figure, master=root)  # A tk.DrawingArea.
+canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
 canvas.draw()
 canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 canvas.mpl_connect("key_press_event", on_key_press)
+
+btn_ml = tkinter.Button(master=root, text="Show Machine Learning", command=show_ml)
+btn_ml.pack()
 
 btn_quit = tkinter.Button(master=root, text="Quit", command=_quit)
 btn_quit.pack(side=tkinter.BOTTOM)
