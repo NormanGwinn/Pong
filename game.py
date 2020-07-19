@@ -16,22 +16,23 @@ import predictor
 class Game():
     score_sound = sa.WaveObject.from_wave_file('phasers3.wav')
 
-    def __init__(self, fig):
+    def __init__(self, fig, the_court=court.Court(1972), training_mode=False):
         self.figure = fig
         self.ax1 = fig.add_subplot(111)
-        self.ax1.set_facecolor('k')
+        self.ax1.set_facecolor(the_court.court_color)
         self.ax1.axes.xaxis.set_visible(False)
         self.ax1.axes.yaxis.set_visible(False)
-        self.ax1.axvline(linewidth=1, color='w', dashes=(3,2))  #net
+        self.ax1.axvline(linewidth=1, color=the_court.net_color, dashes=(3,2))  #net
         self.left_score = 0
         self.right_score = 0
         self.left_score_box = None
         self.right_score_box = None
-        self.left_paddle = paddle.BasicPaddle((-0.52 * court.COURT_WIDTH, 0.0), 'Human')
-        self.right_paddle = paddle.BasicPaddle((0.52 * court.COURT_WIDTH, 0.0), 'ML')
-        initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
-        self.ball = ball.LinearSquare((0.0,0.0), initial_angle, 1.0, 
-                                      self.left_paddle, self.right_paddle, training=False)
+        self.score_color = the_court.score_color
+        self.left_paddle = paddle.BasicPaddle((-0.52 * court.COURT_WIDTH, 0.0), 'Human', the_court.paddle_color)
+        self.right_paddle = paddle.BasicPaddle((0.52 * court.COURT_WIDTH, 0.0), 'ML', the_court.paddle_color)
+        self.ball = ball.LinearSquare((0.0,0.0), self.get_initial_angle(), 1.0, 
+                                      self.left_paddle, self.right_paddle, 
+                                      training=training_mode, ball_color=the_court.ball_color)
         self.predictor = predictor.Predictor()
         self.paddle_commands = []
         self.animation = None
@@ -42,10 +43,17 @@ class Game():
     def get_predictor(self):
         return self.predictor
 
+    def get_initial_angle(self):
+        too_flat_angle = 4.0/360.0*2*np.pi
+        initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
+        if abs(initial_angle) < too_flat_angle:
+            initial_angle = np.sign(initial_angle) * too_flat_angle
+        return initial_angle
+
     def init(self):
-        print(f'Initializing the animation at {dt.datetime.now()}, from call stack.')
-        self.left_score_box = self.ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
-        self.right_score_box = self.ax1.text(0.5,0.7,'0',fontsize=30,color='w')
+        #print(f'Initializing the animation at {dt.datetime.now()}, from call stack.')
+        self.left_score_box = self.ax1.text(-0.5,0.7,'0',fontsize=30,color=self.score_color)
+        self.right_score_box = self.ax1.text(0.5,0.7,'0',fontsize=30,color=self.score_color)
         self.ax1.add_patch(self.ball.get_artist())
         self.ax1.add_patch(self.left_paddle.get_artist())
         self.ax1.add_patch(self.right_paddle.get_artist())
@@ -67,20 +75,19 @@ class Game():
             self.right_score += 1
             self.right_score_box.set_text(str(self.right_score))
             #print(f'right_score_box.text is {right_score_box.get_text()}')
-            #Game.score_sound.play()
+            Game.score_sound.play()
             #raise StopIteration
             reset_ball = True
         if x > 0.5 * court.COURT_WIDTH:
             self.left_score += 1
             self.left_score_box.set_text(str(self.left_score))
             #print(f'left_score_box.text is {left_score_box.get_text()}')
-            #Game.score_sound.play()
+            Game.score_sound.play()
             #raise StopIteration
             reset_ball = True
 
         if reset_ball:
-            initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
-            self.ball.reset((0.0, 0.0), initial_angle, 1.0)
+            self.ball.reset((0.0, 0.0), self.get_initial_angle(), 1.0)
             #time.sleep(1)
 
         predicted_y = self.predictor.predict_y(x, y)

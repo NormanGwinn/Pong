@@ -37,9 +37,10 @@ class BasicPaddle(AbstractPaddle):
     max_y = 0.5 * (court.COURT_HEIGHT - height)
     min_y = -max_y
 
-    def __init__(self, xy, name):
+    def __init__(self, xy, name, paddle_color='w'):
         super().__init__(xy, name)
-        self._artist = plt.Rectangle(self._get_lower_left(), BasicPaddle.width, BasicPaddle.height, color='w')
+        self._artist = plt.Rectangle(self._get_lower_left(), \
+                       BasicPaddle.width, BasicPaddle.height, color=paddle_color)
 
     def _get_lower_left(self):
         return (self._xy[0] - 0.5 * BasicPaddle.width, self._xy[1] - 0.5 * BasicPaddle.height)

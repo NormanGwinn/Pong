@@ -35,10 +35,10 @@ class LinearSquare(AbstractBall):
     acceleration = 1.05
     path_columns = ['TimeStamp','X','Y','Angle','Speed','Final_Y']
 
-    def __init__(self, xy, angle, speed, left_paddle, right_paddle, training = True):
+    def __init__(self, xy, angle, speed, left_paddle, right_paddle, training = True, ball_color='w'):
         super().__init__(xy, angle, speed)
         self._engine = create_engine('sqlite:///pong.db')
-        self._artist = plt.Rectangle(self._get_lower_left(), LinearSquare.width, LinearSquare.height, color='w')
+        self._artist = plt.Rectangle(self._get_lower_left(), LinearSquare.width, LinearSquare.height, color=ball_color)
         self._path_trace = pd.DataFrame(columns=LinearSquare.path_columns)
         self._path_start = dt.datetime.now()
         self._bounce_sound = sa.WaveObject.from_wave_file('click_x.wav')
