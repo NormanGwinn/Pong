@@ -38,7 +38,7 @@ class LinearSquare(AbstractBall):
     def __init__(self, xy, angle, speed, left_paddle, right_paddle, training = True):
         super().__init__(xy, angle, speed)
         self._engine = create_engine('sqlite:///pong.db')
-        self._artist = plt.Rectangle(self._get_lower_left(), LinearSquare.width, LinearSquare.height, color='g')
+        self._artist = plt.Rectangle(self._get_lower_left(), LinearSquare.width, LinearSquare.height, color='w')
         self._path_trace = pd.DataFrame(columns=LinearSquare.path_columns)
         self._path_start = dt.datetime.now()
         self._bounce_sound = sa.WaveObject.from_wave_file('click_x.wav')
@@ -47,8 +47,9 @@ class LinearSquare(AbstractBall):
         self._right_paddle = right_paddle
         self._training = training
 
-    def __del__(self): 
-        print('Destructor called, LinearSquare Ball deleted.') 
+    def __del__(self):
+        pass
+        #print('Destructor called, LinearSquare Ball deleted.') 
 
     def reset(self, xy, angle, speed):
         self._xy = xy         # (x, y) pair for center of ball; type:  tuple(float, float)

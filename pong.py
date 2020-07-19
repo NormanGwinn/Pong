@@ -16,18 +16,17 @@ import ball
 import predictor
 
 score_sound = sa.WaveObject.from_wave_file('phasers3.wav')
-root = tkinter.Tk()
-root.wm_title("Pong Machine Learning")
 
-fig, ax1 = plt.subplots()
+fig, ax1 = plt.subplots(facecolor='w')
+ax1.set_facecolor('k')
 ax1.axes.xaxis.set_visible(False)
 ax1.axes.yaxis.set_visible(False)
-ax1.axvline(linewidth=1, color='r', dashes=(3,2))  #net
+ax1.axvline(linewidth=1, color='w', dashes=(3,2))  #net
 
 left_score = 0
 right_score = 0
-left_score_box = ax1.text(-0.5,0.7,'0',fontsize=30)
-right_score_box = ax1.text(0.5,0.7,'0',fontsize=30)
+left_score_box = ax1.text(-0.5,0.7,'0',fontsize=30,color='w')
+right_score_box = ax1.text(0.5,0.7,'0',fontsize=30,color='w')
 left_paddle = paddle.BasicPaddle((-0.52 * court.COURT_WIDTH, 0.0), 'Human')
 right_paddle = paddle.BasicPaddle((0.52 * court.COURT_WIDTH, 0.0), 'ML')
 initial_angle = 0.25 * np.pi * (2.0 * np.random.rand() + 3.0)
@@ -58,14 +57,14 @@ def update(frame):
     if x < -0.5 * court.COURT_WIDTH:
         right_score += 1
         right_score_box.set_text(str(right_score))
-        print(f'right_score_box.text is {right_score_box.get_text()}')
+        #print(f'right_score_box.text is {right_score_box.get_text()}')
         score_sound.play()
         #raise StopIteration
         reset_ball = True
     if x > 0.5 * court.COURT_WIDTH:
         left_score += 1
         left_score_box.set_text(str(left_score))
-        print(f'left_score_box.text is {left_score_box.get_text()}')
+        #print(f'left_score_box.text is {left_score_box.get_text()}')
         score_sound.play()
         #raise StopIteration
         reset_ball = True
@@ -102,6 +101,10 @@ def update(frame):
 
     return ball.get_artist(), left_paddle.get_artist(), right_paddle.get_artist(), left_score_box, right_score_box
 
+root = tkinter.Tk()
+root.configure(bg='white')
+root.wm_title("Pong Machine Learning")
+
 lbl_instructions = tkinter.Label(root, text="Control the Left Paddle with the 'u' (up) and 'd' (down) keys.")
 lbl_instructions.pack()
 
@@ -109,14 +112,16 @@ canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
 canvas.draw()
 canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
-toolbar = NavigationToolbar2Tk(canvas, root)
-toolbar.update()
-#canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+def toggle_color_scheme():
+    print(f'In toggle_color_scheme.')
+    ax1.set_facecolor('b')
 
 def on_key_press(event):
     #print("you pressed {}".format(event.key))
     if event.key in ['u','d']:
         paddle_commands.append(event.key)
+    elif event.key in ['c']:
+        toggle_color_scheme()
     #key_press_handler(event, canvas, toolbar)
 
 canvas.mpl_connect("key_press_event", on_key_press)
