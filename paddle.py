@@ -6,8 +6,9 @@ import court
  
 class AbstractPaddle(ABC):
  
-    def __init__(self, xy):
+    def __init__(self, xy, name):
         self._xy = xy         # (x, y) pair for center of paddle; type:  tuple(float, float)
+        self._name = name
         super().__init__()
     
     # dy := requested change in y location; type:  float
@@ -16,8 +17,14 @@ class AbstractPaddle(ABC):
     def update_location(self, dy):
         pass
 
+    # return xy
     @abstractmethod
     def get_center(self):
+        pass
+
+    # return (y_bottom, y_top)
+    @abstractmethod
+    def get_span(self):
         pass
 
     @abstractmethod
@@ -26,10 +33,12 @@ class AbstractPaddle(ABC):
 
 class BasicPaddle(AbstractPaddle):
     width = 0.04 * court.COURT_WIDTH
-    height = 0.2 * court.COURT_HEIGHT
+    height = 0.15 * court.COURT_HEIGHT
+    max_y = 0.5 * (court.COURT_HEIGHT - height)
+    min_y = -max_y
 
-    def __init__(self, xy):
-        super().__init__(xy)
+    def __init__(self, xy, name):
+        super().__init__(xy, name)
         self._artist = plt.Rectangle(self._get_lower_left(), BasicPaddle.width, BasicPaddle.height, color='b')
 
     def _get_lower_left(self):
@@ -38,8 +47,21 @@ class BasicPaddle(AbstractPaddle):
     def get_center(self):
         return (self._xy[0], self._xy[1])        
 
+    def get_span(self):
+        y_bottom = self._xy[1] - 0.5 * BasicPaddle.height
+        y_top = self._xy[1] + 0.5 * BasicPaddle.height
+        #print(f'In get_span, y is {self._xy[1]}')
+        return (y_bottom, y_top)
+
     def update_location(self, dy):
-        self._xy = (self._xy[0], self._xy[1] + dy)
+        #print(f'Paddle {self._name} center is {self._xy}')
+        new_y = self._xy[1] + dy
+        # Limit the range of the paddle, to keep it on the court
+        if new_y > BasicPaddle.max_y:
+            new_y = BasicPaddle.max_y
+        elif new_y < BasicPaddle.min_y:
+            new_y = BasicPaddle.min_y
+        self._xy = (self._xy[0], new_y)
         #print(f'New XY:  {self._xy}')
         self._artist.set_xy(self._get_lower_left())
         return (self._xy[0], self._xy[1])

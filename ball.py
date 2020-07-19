@@ -15,6 +15,10 @@ class AbstractBall(ABC):
         self._speed = speed   # speed, in units/second; type:  float
         super().__init__()
     
+    @abstractmethod
+    def reset(self, xy, angle, speed):
+        pass
+
     # dtime := time elapsed; type:  dt.timedelta
     # returns:  xy; type:  tuple(float, float)
     @abstractmethod
@@ -28,10 +32,10 @@ class AbstractBall(ABC):
 class LinearSquare(AbstractBall):
     width = 0.04 * court.COURT_HEIGHT
     height = width
-    acceleration = 1.01
+    acceleration = 1.05
     path_columns = ['TimeStamp','X','Y','Angle','Speed','Final_Y']
 
-    def __init__(self, xy, angle, speed):
+    def __init__(self, xy, angle, speed, left_paddle, right_paddle, training = True):
         super().__init__(xy, angle, speed)
         self._engine = create_engine('sqlite:///pong.db')
         self._artist = plt.Rectangle(self._get_lower_left(), LinearSquare.width, LinearSquare.height, color='g')
@@ -39,8 +43,17 @@ class LinearSquare(AbstractBall):
         self._path_start = dt.datetime.now()
         self._bounce_sound = sa.WaveObject.from_wave_file('click_x.wav')
 
+        self._left_paddle = left_paddle
+        self._right_paddle = right_paddle
+        self._training = training
+
     def __del__(self): 
         print('Destructor called, LinearSquare Ball deleted.') 
+
+    def reset(self, xy, angle, speed):
+        self._xy = xy         # (x, y) pair for center of ball; type:  tuple(float, float)
+        self._angle = angle   # angle, in radians, indicating the direction of the ball; type:  float
+        self._speed = speed   # speed, in units/second; type:  float
 
     def _get_lower_left(self):
         return (self._xy[0] - 0.5 * LinearSquare.width, self._xy[1] - 0.5 * LinearSquare.height)
@@ -50,32 +63,49 @@ class LinearSquare(AbstractBall):
         dy = self._speed * dtime.total_seconds() * np.sin(self._angle)
         #print(dx, dy, dtime, dtime.total_seconds())
         new_x = self._xy[0] + dx
-        if new_x < -court.COURT_WIDTH/2:
-            self._bounce_sound.play()
-            new_x = -court.COURT_WIDTH - new_x
-            self._angle = np.pi - self._angle
-            if self._angle < 0:
-                self._angle += 2 * np.pi
-            self._speed *= 1.02
-        if new_x > court.COURT_WIDTH/2:
-            self._bounce_sound.play()
-
-            # # Compute Final Y
-            # old_x = self._xy[0]
-            # ratio_before_bounce = (0.5*court.COURT_WIDTH - old_x)/dx
-            # final_y = self._xy[1] + ratio_before_bounce * dy
-            # self._path_trace.Final_Y = final_y
-            # print(self._path_trace)
-            # self._path_trace.to_sql('path', con=self._engine, index=False, if_exists='append')
-            # self._path_trace.drop(self._path_trace.index, inplace=True)
-
-            # Update ball location
-            new_x = court.COURT_WIDTH - new_x
-            self._angle = np.pi - self._angle
-            if self._angle < 0:
-                self._angle += 2 * np.pi            
-            self._speed *= 1.02
         new_y = self._xy[1] + dy
+        #print(f'Ball:  {new_x}, {new_y}')
+        if new_x < -court.COURT_WIDTH/2:
+            bounce = True
+            if self._training == False:
+                # Compute Final Y
+                old_x = self._xy[0]
+                ratio_before_bounce = (-0.5*court.COURT_WIDTH - old_x)/dx
+                final_y = self._xy[1] + ratio_before_bounce * dy
+                #print(f'Final Y {final_y}, ratio {ratio_before_bounce}, old y {self._xy[1]}')
+                # Compare Final Y to paddle
+                (paddle_bottom, paddle_top) = self._left_paddle.get_span()
+                if final_y <= paddle_bottom or final_y >= paddle_top:
+                    bounce = False
+                #print(f'Left Paddle Span:  ({paddle_bottom}, {paddle_top}), ball:  {final_y}, bounce:  {bounce}')
+
+            if bounce:
+                self._bounce_sound.play()
+                new_x = -court.COURT_WIDTH - new_x
+                self._angle = np.pi - self._angle
+                if self._angle < 0:
+                    self._angle += 2 * np.pi
+                self._speed *= LinearSquare.acceleration
+        if new_x > court.COURT_WIDTH/2:
+            bounce = True
+            if self._training == False:
+                # Compute Final Y
+                old_x = self._xy[0]
+                ratio_before_bounce = (0.5*court.COURT_WIDTH - old_x)/dx
+                final_y = self._xy[1] + ratio_before_bounce * dy
+                # Compare Final Y to paddle
+                (paddle_bottom, paddle_top) = self._right_paddle.get_span()
+                if final_y <= paddle_bottom or final_y >= paddle_top:
+                    bounce = False
+                #print(f'Right Paddle Span:  ({paddle_bottom}, {paddle_top}), ball:  {final_y}, bounce:  {bounce}')
+
+            if bounce:
+                self._bounce_sound.play()
+                new_x = court.COURT_WIDTH - new_x
+                self._angle = np.pi - self._angle
+                if self._angle < 0:
+                    self._angle += 2 * np.pi            
+                self._speed *= LinearSquare.acceleration
         if new_y > court.COURT_HEIGHT/2:
             self._bounce_sound.play()
             new_y = court.COURT_HEIGHT - new_y
