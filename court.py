@@ -15,8 +15,8 @@ class Court():
         self.net_color = 'w'
         self.score_color = 'w'
         if year == 2020:
-            self.court_color = 'w'
-            self.paddle_color = 'b'
-            self.ball_color = 'g'
+            self.court_color = 'gray'
+            self.paddle_color = 'k'
+            self.ball_color = 'yellow'
             self.net_color = 'r'
-            self.score_color = 'r'
+            self.score_color = 'w'
