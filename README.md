@@ -17,7 +17,19 @@ The tkinter code is separated from the Python code.  The game logic is encapsula
 - Paddle
 - Predictor
 
+### To Install:
 
+Download the Python code files and Wave audio files.
+
+When you try to run, you might need to install additional Python libraries:
+
+- pip install simpleaudio
+- pip install tkinter
+- pip install <whatever>
+
+### To Run:
+
+python pong.py
 
 
 
